@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">PlanLekcjiWitelona</string>
+    <string name="TextView">TextView</string>
+    <string name="Pobierz_HTML">"Pobierz HTML"</string>
+    <string name="button">Button</string>
+    <string name="Number">1.</string>
 </resources>

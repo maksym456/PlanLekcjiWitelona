@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.androidApplication)
 }
-
 android {
     namespace = "com.example.planlekcjiwitelona"
     compileSdk = 34
@@ -29,8 +28,8 @@ android {
 }
 
 dependencies {
-
     implementation(libs.appcompat)
+    implementation("org.jsoup:jsoup:1.13.1")
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
