@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/g11"
+        android:title="@string/grupa_1_1"/>
+    <item android:id="@+id/g12"
+        android:title="@string/grupa_1_2"/>
+    <item android:id="@+id/g21"
+        android:title="@string/grupa_2_1_u"/>
+    <item android:id="@+id/g22"
+        android:title="@string/grupa_2_2_u"/>
+    <item android:id="@+id/g31"
+        android:title="@string/grupa_3_1_u"/>
+    <item android:id="@+id/g32"
+        android:title="@string/grupa_3_2_u"/>
+</menu>

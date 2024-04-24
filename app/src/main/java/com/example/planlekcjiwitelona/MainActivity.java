@@ -1,26 +1,40 @@
 package com.example.planlekcjiwitelona;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.select.Elements;
-
+import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
+import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
-import androidx.activity.EdgeToEdge;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -30,64 +44,177 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Objects;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-import android.content.Context;
-import android.widget.ListView;
+import java.util.Iterator;
 import java.util.List;
-import android.widget.TextView;
+import java.util.Objects;
+import java.util.TimeZone;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity {
     String whichweekday = "0";
-    int whichday = 0;
     String whichweek = "7";
-    int group=1;
+    String[] weekdays = {"12","13","14","15","16","17","18"};
+    int Currentday = 1;
+    int Currentmonth = 1;
+    int Currentyear = 1;
+    boolean noButtonClicked = true;
+    int previousday = 0;
+    int previousweekday = 0;
+    TimeZone timeZone = TimeZone.getTimeZone("Europe/Warsaw");
+    int group = 1;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        try {
+            group = Integer.parseInt(readGroup());
+        } catch (IOException e) {
+            try {
+                saveGroup(String.valueOf(group));
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setBackgroundDrawable(ContextCompat.getDrawable(this, R.drawable.title));
+        }
+        updateGroupOnActionBar();
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        EdgeToEdge.enable(this);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+        final View mainLayout = findViewById(R.id.main);
+        ViewCompat.setOnApplyWindowInsetsListener(mainLayout, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            ConstraintLayout.LayoutParams layoutParams = (ConstraintLayout.LayoutParams) v.getLayoutParams();
+            layoutParams.topMargin = systemBars.top;
+            v.setLayoutParams(layoutParams);
             return insets;
         });
         Calendar calendar = Calendar.getInstance();
         int customDayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
-        int whichweekdayfirst = (customDayOfWeek == Calendar.SUNDAY) ? 6 : customDayOfWeek - 1;
-        updateButtons(whichweekdayfirst);
-        updateTextView(String.valueOf(whichweekday));
-        updateListView(String.valueOf(whichweek), String.valueOf(whichweekday));
-
+        int whichweekdayfirst = (customDayOfWeek == Calendar.SUNDAY) ? 7 : customDayOfWeek - 1;
+        whichweek = String.valueOf(calendar.get(Calendar.WEEK_OF_YEAR));
+        Currentday = calendar.get(Calendar.DAY_OF_MONTH);
+        Currentmonth = calendar.get(Calendar.MONTH);
+        Currentyear = calendar.get(Calendar.YEAR);
+        int daysUntilMonday = Calendar.MONDAY - whichweekdayfirst;
+        if (daysUntilMonday > 0) {
+            daysUntilMonday -= 7;
+        }
+        calendar.add(Calendar.DAY_OF_MONTH, daysUntilMonday);
+        int firstdaymonth=calendar.get(Calendar.MONTH)+1;
+        weekdays = new String[7];
+        for (int i = 0; i < 7; i++) {
+            weekdays[i] = Integer.toString(calendar.get(Calendar.DAY_OF_MONTH)-1);
+            calendar.add(Calendar.DAY_OF_MONTH, 1);
+        }
+        updateButtons(whichweekdayfirst, firstdaymonth);
+        whichweekday = String.valueOf(whichweekdayfirst);
+        updateListView(whichweek, whichweekday);
+        final SwipeRefreshLayout pullToRefresh = findViewById(R.id.pullToRefresh);
+        pullToRefresh.setOnRefreshListener(() -> downloadHtml(() -> pullToRefresh.setRefreshing(false)));
+        Window window = getWindow();
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        window.setStatusBarColor(ContextCompat.getColor(this, R.color.ThemeColor));
     }
-    public void updateButtons(int weekday){
+    @SuppressLint("SetTextI18n")
+    public void updateButtons(int weekday, int month){
+        noButtonClicked = false;
+        Button calendar = findViewById(R.id.calendar);
+        String monthname = getMonthname(month);
+        calendar.setText(monthname);
+        for (String day : weekdays) {
+            Log.d("KALENDAR", "calendar: "+day);
+        }
+        Button monday = findViewById(R.id.monday);
+        monday.setText("Pon.\n"+weekdays[0]);
+        Button tuesday = findViewById(R.id.tuesday);
+        tuesday.setText("Wt.\n"+weekdays[1]);
+        Button wednesday = findViewById(R.id.wednesday);
+        wednesday.setText("Śr.\n"+weekdays[2]);
+        Button thursday = findViewById(R.id.thursday);
+        thursday.setText("Czw.\n"+weekdays[3]);
+        Button friday = findViewById(R.id.friday);
+        friday.setText("Pt.\n"+weekdays[4]);
+        Button saturday = findViewById(R.id.saturday);
+        saturday.setText("Sob.\n"+weekdays[5]);
+        Button sunday = findViewById(R.id.sunday);
+        sunday.setText("Niedz.\n"+weekdays[6]);
         if(weekday==1){
-            Button monday = findViewById(R.id.monday);
             updateDay(monday, 1);
         } else if (weekday==2) {
-            Button tuesday = findViewById(R.id.tuesday);
             updateDay(tuesday, 2);
         } else if (weekday==3) {
-            Button wednesday = findViewById(R.id.wednesday);
             updateDay(wednesday, 3);
         } else if (weekday==4) {
-            Button thursday = findViewById(R.id.thursday);
             updateDay(thursday, 4);
         } else if (weekday==5) {
-            Button friday = findViewById(R.id.friday);
             updateDay(friday, 5);
         } else if (weekday==6) {
-            Button saturday = findViewById(R.id.saturday);
             updateDay(saturday, 6);
         } else if (weekday==7) {
-            Button sunday = findViewById(R.id.sunday);
             updateDay(sunday, 7);
         }
     }
+    public void updateGroupOnActionBar() {
+        ActionBar actionBar = getSupportActionBar();
+        String groupText;
+        if(group==0){
+            groupText="1(1)";
+        }else if(group==1){
+            groupText="1(2)";
+        }else if(group==2){
+            groupText="2(1)u";
+        }else if(group==3){
+            groupText="2(2)u";
+        }else if(group==4){
+            groupText="3(1)u";
+        }else if(group==5){
+            groupText="3(2)u";
+        }
+        else{
+            groupText="Błąd";
+        }
+        if (actionBar != null) {
+            actionBar.setTitle("Harmonogram zajęć grupa "+groupText); // Ustaw nowy tytuł dla ActionBara
+        }
+    }
+
+    @NonNull
+    private static String getMonthname(int month) {
+        String monthname;
+        if (month ==1){
+            monthname = "Sty";
+        } else if (month ==2){
+            monthname = "Lut";
+        }else if (month ==3){
+            monthname = "Mar";
+        }else if (month ==4){
+            monthname = "Kwi";
+        }else if (month ==5){
+            monthname = "Maj";
+        }else if (month ==6){
+            monthname = "Cze";
+        }else if (month ==7){
+            monthname = "Lip";
+        }else if (month ==8){
+            monthname = "Sie";
+        }else if (month ==9){
+            monthname = "Wrz";
+        }else if (month ==10){
+            monthname = "Paź";
+        }else if (month ==11){
+            monthname = "Lis";
+        }else if (month ==12){
+            monthname = "Gru";
+        }
+        else{
+            monthname = "Wrng";
+        }
+        return monthname;
+    }
+
     private String readFile() {
         StringBuilder sb = new StringBuilder();
         try {
@@ -115,7 +242,7 @@ public class MainActivity extends AppCompatActivity {
         return valuesList;
     }
     private void updateListView(String week, String weekday) {
-        updateButtons(Integer.parseInt(weekday));
+        updateTextView("");
         Context context = getApplicationContext();
         ListView listView = findViewById(R.id.List);
         List<String> listHour = new ArrayList<>();
@@ -143,8 +270,15 @@ public class MainActivity extends AppCompatActivity {
 
             CustomBaseAdapter customBaseAdapter = new CustomBaseAdapter(context, listLesson, listHour, listTeacher, listRoom, listNumber);
             listView.setAdapter(customBaseAdapter);
+            if (listLesson.isEmpty()){
+                updateTextView("Tego dnia nie ma zajęć");
+            }
 
         } catch (JSONException e) {
+            List<String> List = new ArrayList<>();
+            CustomBaseAdapter customBaseAdapter = new CustomBaseAdapter(context, List, List, List, List, List);
+            listView.setAdapter(customBaseAdapter);
+            updateTextView("Tego dnia nie ma zajęć");
             Log.d("EXCEPTION LOG", String.valueOf(e));
         }
     }
@@ -160,7 +294,24 @@ public class MainActivity extends AppCompatActivity {
             executor.shutdown();
         }
     }
-    public void downloadHtml(View view) {
+    private void saveGroup(String value) throws IOException {
+        FileOutputStream fos = openFileOutput("group.txt", MODE_PRIVATE);
+        fos.write(value.getBytes());
+        fos.close();
+    }
+    private String readGroup() throws IOException {
+            FileInputStream fis = openFileInput("group.txt");
+            InputStreamReader isr = new InputStreamReader(fis);
+            BufferedReader bufferedReader = new BufferedReader(isr);
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                sb.append(line);
+            }
+            fis.close();
+            return sb.toString();
+    }
+    public void downloadHtml(Runnable completionCallback) {
         executor.execute(() -> {
             String url = "http://www.plan.pwsz.legnica.edu.pl/checkSpecjalnoscStac.php?specjalnosc=s1INF";
             StringBuilder html = new StringBuilder();
@@ -180,69 +331,236 @@ public class MainActivity extends AppCompatActivity {
                         OutputStreamWriter outputStreamWriter = new OutputStreamWriter(fos, "ISO-8859-2");
                         outputStreamWriter.write(parsedHtml);
                         outputStreamWriter.close();
-                        updateTextView(parsedHtml);
+                        mainHandler.post(() -> Toast.makeText(MainActivity.this, "Zaktualizowano plan!", Toast.LENGTH_SHORT).show());
+                        completionCallback.run();
                     } catch (Exception e) {
                         Log.e("EXCEPTION LOG", "Failed to write to file", e);
                     }
                 });
             } catch (Exception e) {
                 Log.e("EXCEPTION LOG", "Failed to download HTML", e);
-                mainHandler.post(() -> Toast.makeText(MainActivity.this, "Błąd podczas pobierania HTML.", Toast.LENGTH_SHORT).show());
+                mainHandler.post(() -> Toast.makeText(MainActivity.this, "Błąd podczas pobierania informacji ze strony.", Toast.LENGTH_SHORT).show());
+                completionCallback.run();
             }
         });
     }
-
-    public void left(View view) {
-        if(whichday>0)
-        {
-            whichday--;
-            updateListView("7","1");
+    public boolean onOptionsItemSelected(@NonNull MenuItem item){
+        if(item.getItemId()==R.id.g11){
+            group =0;
+        }else if (item.getItemId()==R.id.g12) {
+            group =1;
+        }else if (item.getItemId()==R.id.g21) {
+            group =2;
+        }else if (item.getItemId()==R.id.g22) {
+            group =3;
+        }else if (item.getItemId()==R.id.g31) {
+            group =4;
+        }else if (item.getItemId()==R.id.g32) {
+            group =5;
         }
-    }
-    public void right(View view) {
-        if(whichday<76)
-        {
-            whichday++;
-            updateListView("7","1");
+        updateListView(whichweek, whichweekday);
+        try {
+            saveGroup(String.valueOf(group));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
+        updateGroupOnActionBar();
+        return super.onOptionsItemSelected(item);
     }
     public void monday(View view) {
         updateDay(view, 1);
+        previousday = Integer.parseInt(weekdays[previousweekday-1]);
+        if(Integer.parseInt(weekdays[0])>Integer.parseInt(weekdays[6]))
+        {
+            if(Integer.parseInt(weekdays[0])>previousday)
+            {
+                Currentmonth-=1;
+            }
+        }
+        Currentday = Integer.parseInt(weekdays[0]);
+        updateListView(whichweek,whichweekday);
     }
     public void tuesday(View view) {
         updateDay(view, 2);
+        previousday = Integer.parseInt(weekdays[previousweekday-1]);
+        if(previousday==Integer.parseInt(weekdays[0])&&Integer.parseInt(weekdays[1])<previousday){
+            Currentmonth+=1;
+        }
+        else if (previousday==Integer.parseInt(weekdays[6])&&Integer.parseInt(weekdays[1])>previousday){
+            Currentmonth-=1;
+        }
+        else if (previousday!=Integer.parseInt(weekdays[6])&&previousday!=Integer.parseInt(weekdays[0]))
+        {
+            if(Integer.parseInt(weekdays[0])>Integer.parseInt(weekdays[6]))
+            {
+                if(Integer.parseInt(weekdays[1])<Integer.parseInt(weekdays[0]) && Integer.parseInt(weekdays[1])<Integer.parseInt(weekdays[6])){
+                    if(previousday>=Integer.parseInt(weekdays[0]) || previousday>=Integer.parseInt(weekdays[6])){
+                        Currentmonth+=1;
+                    }
+                }
+                else
+                {
+                    if(previousday<Integer.parseInt(weekdays[0]) && previousday<Integer.parseInt(weekdays[6])){
+                        Currentmonth-=1;
+                    }
+                }
+            }
+        }
+        Currentday = Integer.parseInt(weekdays[1]);
+        updateListView(whichweek,whichweekday);
     }
     public void wednesday(View view) {
         updateDay(view, 3);
+        previousday = Integer.parseInt(weekdays[previousweekday-1]);
+        if(previousday==Integer.parseInt(weekdays[0])&&Integer.parseInt(weekdays[2])<previousday){
+            Currentmonth+=1;
+        }
+        else if (previousday==Integer.parseInt(weekdays[6])&&Integer.parseInt(weekdays[2])>previousday){
+            Currentmonth-=1;
+        }
+        else if (previousday!=Integer.parseInt(weekdays[6])&&previousday!=Integer.parseInt(weekdays[0])) {
+            if (Integer.parseInt(weekdays[0]) > Integer.parseInt(weekdays[6])) {
+                if (Integer.parseInt(weekdays[0]) > Integer.parseInt(weekdays[6])) {
+                    if (Integer.parseInt(weekdays[2]) < Integer.parseInt(weekdays[0]) && Integer.parseInt(weekdays[2]) < Integer.parseInt(weekdays[6])) {
+                        if (previousday >= Integer.parseInt(weekdays[0]) || previousday >= Integer.parseInt(weekdays[6])) {
+                            Currentmonth += 1;
+                        }
+                    } else {
+                        if (previousday < Integer.parseInt(weekdays[0]) && previousday < Integer.parseInt(weekdays[6])) {
+                            Currentmonth -= 1;
+                        }
+                    }
+                }
+            }
+        }
+        Currentday = Integer.parseInt(weekdays[2]);
+        updateListView(whichweek,whichweekday);
     }
     public void thursday(View view) {
         updateDay(view, 4);
+        previousday = Integer.parseInt(weekdays[previousweekday-1]);
+        if(previousday==Integer.parseInt(weekdays[0])&&Integer.parseInt(weekdays[3])<previousday){
+            Currentmonth+=1;
+        }
+        else if (previousday==Integer.parseInt(weekdays[6])&&Integer.parseInt(weekdays[3])>previousday){
+            Currentmonth-=1;
+        }
+        else if (previousday!=Integer.parseInt(weekdays[6])&&previousday!=Integer.parseInt(weekdays[0])) {
+            if (Integer.parseInt(weekdays[0]) > Integer.parseInt(weekdays[6])) {
+                if (Integer.parseInt(weekdays[0]) > Integer.parseInt(weekdays[6])) {
+                    if (Integer.parseInt(weekdays[3]) < Integer.parseInt(weekdays[0]) && Integer.parseInt(weekdays[3]) < Integer.parseInt(weekdays[6])) {
+                        if (previousday >= Integer.parseInt(weekdays[0]) || previousday >= Integer.parseInt(weekdays[6])) {
+                            Currentmonth += 1;
+                        }
+                    } else {
+                        if (previousday < Integer.parseInt(weekdays[0]) && previousday < Integer.parseInt(weekdays[6])) {
+                            Currentmonth -= 1;
+                        }
+                    }
+                }
+            }
+        }
+        Currentday = Integer.parseInt(weekdays[3]);
+        updateListView(whichweek,whichweekday);
     }
     public void friday(View view) {
         updateDay(view, 5);
+        previousday = Integer.parseInt(weekdays[previousweekday-1]);
+        if(previousday==Integer.parseInt(weekdays[0])&&Integer.parseInt(weekdays[4])<previousday){
+            Currentmonth+=1;
+        }
+        else if (previousday==Integer.parseInt(weekdays[6])&&Integer.parseInt(weekdays[4])>previousday){
+            Currentmonth-=1;
+        }
+        else if (previousday!=Integer.parseInt(weekdays[6])&&previousday!=Integer.parseInt(weekdays[0])) {
+            if (Integer.parseInt(weekdays[0]) > Integer.parseInt(weekdays[6])) {
+                if (Integer.parseInt(weekdays[0]) > Integer.parseInt(weekdays[6])) {
+                    if (Integer.parseInt(weekdays[4]) < Integer.parseInt(weekdays[0]) && Integer.parseInt(weekdays[4]) < Integer.parseInt(weekdays[6])) {
+                        if (previousday >= Integer.parseInt(weekdays[0]) && previousday >= Integer.parseInt(weekdays[6])) {
+                            Currentmonth += 1;
+                        }
+                    } else {
+                        if (previousday < Integer.parseInt(weekdays[0]) && previousday < Integer.parseInt(weekdays[6])) {
+                            Currentmonth -= 1;
+                        }
+                    }
+                }
+            }
+        }
+        Currentday = Integer.parseInt(weekdays[4]);
+        updateListView(whichweek,whichweekday);
     }
     public void saturday(View view) {
         updateDay(view, 6);
+        previousday = Integer.parseInt(weekdays[previousweekday-1]);
+        if(previousday==Integer.parseInt(weekdays[0])&&Integer.parseInt(weekdays[5])<previousday){
+            Currentmonth+=1;
+        }
+        else if (previousday==Integer.parseInt(weekdays[6])&&Integer.parseInt(weekdays[5])>previousday){
+            Currentmonth-=1;
+        }
+        else if (previousday!=Integer.parseInt(weekdays[6])&&previousday!=Integer.parseInt(weekdays[0])) {
+            if (Integer.parseInt(weekdays[0]) > Integer.parseInt(weekdays[6])) {
+                if (Integer.parseInt(weekdays[0]) > Integer.parseInt(weekdays[6])) {
+                    if (Integer.parseInt(weekdays[5]) < Integer.parseInt(weekdays[0]) && Integer.parseInt(weekdays[5]) < Integer.parseInt(weekdays[6])) {
+                        if (previousday >= Integer.parseInt(weekdays[0]) || previousday >= Integer.parseInt(weekdays[6])) {
+                            Currentmonth += 1;
+                        }
+                    } else {
+                        if (previousday < Integer.parseInt(weekdays[0]) && previousday < Integer.parseInt(weekdays[6])) {
+                            Currentmonth -= 1;
+                        }
+                    }
+                }
+            }
+        }
+        Currentday = Integer.parseInt(weekdays[5]);
+        updateListView(whichweek,whichweekday);
     }
     public void sunday(View view) {
         updateDay(view, 7);
+        previousday = Integer.parseInt(weekdays[previousweekday-1]);
+        if(Integer.parseInt(weekdays[0])>Integer.parseInt(weekdays[6]))
+        {
+            if(Integer.parseInt(weekdays[6])<previousday)
+            {
+                Currentmonth+=1;
+            }
+        }
+        Currentday = Integer.parseInt(weekdays[6]);
+        updateListView(whichweek,whichweekday);
     }
     public void calendar(View view) {
         DatePickerDialog datePickerDialog = new DatePickerDialog(this, (view1, year, month, dayOfMonth) -> {
             Calendar calendar = new GregorianCalendar(year,month,dayOfMonth);
             calendar.setFirstDayOfWeek(Calendar.MONDAY);
             int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
-            int adjustedDayOfWeek = (dayOfWeek == Calendar.SUNDAY) ? 6 : dayOfWeek - 1;
+            int adjustedDayOfWeek = (dayOfWeek == Calendar.SUNDAY) ? 7 : dayOfWeek - 1;
             int weekOfYear = calendar.get(Calendar.WEEK_OF_YEAR);
-            updateTextView(weekOfYear+"\nweekday:"+adjustedDayOfWeek);
-            whichweekday = String.valueOf(adjustedDayOfWeek);
+            Currentyear=calendar.get(Calendar.YEAR);
+            Currentmonth=calendar.get(Calendar.MONTH);
+            Currentday=calendar.get(Calendar.DAY_OF_MONTH);
+            int daysUntilMonday = Calendar.MONDAY - dayOfWeek;
+            if (daysUntilMonday > 0) {
+                daysUntilMonday -= 7;
+            }
+            calendar.add(Calendar.DAY_OF_MONTH, daysUntilMonday);
+            int firstdaymonth=calendar.get(Calendar.MONTH)+1;
+            weekdays = new String[7];
+            for (int i = 0; i < 7; i++) {
+                weekdays[i] = Integer.toString(calendar.get(Calendar.DAY_OF_MONTH));
+                calendar.add(Calendar.DAY_OF_MONTH, 1);
+            }
+            updateButtons(adjustedDayOfWeek, firstdaymonth);
             whichweek = String.valueOf(weekOfYear);
             updateListView(whichweek,whichweekday);
-        }, 2024, 1, 12);
+        }, Currentyear, Currentmonth, Currentday);
         datePickerDialog.getDatePicker().setFirstDayOfWeek(Calendar.MONDAY);
         datePickerDialog.show();
     }
     public JSONObject parseSchedule(String htmlContent) throws JSONException {
+        boolean didItJustSkipAWeek = Boolean.TRUE;
+        int previousCalendarWeek = 0;
         Document doc = Jsoup.parse(htmlContent);
         JSONObject result = new JSONObject();
         JSONArray dni = new JSONArray();
@@ -267,40 +585,57 @@ public class MainActivity extends AppCompatActivity {
             }
             dni.put(dzien);
             dayString = dane.get(rowcount-3).select("td").get(0).text();
-            Log.d("WRONGWEONG", "SOMETHINGISSERIOUSLY WRONG: "+dayString);
             int weekday = dayOfTheWeek(dayString.split(" ")[0]);
             if (weekday!=0)
             {
                 if (previousweekday >= weekday) {
-                    Calendar calendar = new GregorianCalendar(Integer.parseInt(dayString.split(" ")[1].split("-")[0]), Integer.parseInt(dayString.split(" ")[1].split("-")[1])-1, Integer.parseInt(dayString.split(" ")[1].split("-")[2]));
-                    tygodnie.put(String.valueOf(calendar.get(Calendar.WEEK_OF_YEAR)-1),tydzien);
+                    String dateString = dayString.split(" ")[1];
+                    int year = Integer.parseInt(dateString.split("-")[0]);
+                    int month = Integer.parseInt(dateString.split("-")[1]) - 1; // Miesiąc w Java zaczyna się od 0
+                    int day = Integer.parseInt(dateString.split("-")[2]);
+                    Calendar calendar = new GregorianCalendar(timeZone);
+                    calendar.set(year, month, day);
+
+                    calendar.setFirstDayOfWeek(Calendar.MONDAY);
+                    if (didItJustSkipAWeek == Boolean.FALSE && previousCalendarWeek+1!=calendar.get(Calendar.WEEK_OF_YEAR)-1)
+                    {
+                        tygodnie.put(String.valueOf(previousCalendarWeek+1), tydzien);
+                        didItJustSkipAWeek=Boolean.TRUE;
+                    }
+                    else
+                    {
+                        tygodnie.put(String.valueOf(calendar.get(Calendar.WEEK_OF_YEAR)-1),tydzien);
+                        didItJustSkipAWeek=Boolean.FALSE;
+                    }
+                    previousCalendarWeek=calendar.get(Calendar.WEEK_OF_YEAR)-1;
                     tydzien = new JSONObject();
                     for (int k = 1; k <= 7; k++) {
                         tydzien.put(String.valueOf(k), "siema");
                     }
                 }
                 tydzien.put(String.valueOf(weekday), dzien);
-                Log.d("WRONGWEONG", "SOMETHINGISSERIOUSLY WRONG: "+tydzien);
-            }
-            else{
-                Log.d("WRONGWEONG", "SOMETHINGISSERIOUSLY WRONG: "+dzien);
             }
             previousweekday = weekday;
             dzien = new JSONObject();
         }
         Calendar calendar = new GregorianCalendar(Integer.parseInt(dayString.split(" ")[1].split("-")[0]), Integer.parseInt(dayString.split(" ")[1].split("-")[1])-1, Integer.parseInt(dayString.split(" ")[1].split("-")[2]));
+        calendar.setFirstDayOfWeek(Calendar.MONDAY);
         tygodnie.put(String.valueOf(calendar.get(Calendar.WEEK_OF_YEAR)),tydzien);
         Log.d("TYDZIEN MAPKA", String.valueOf(tygodnie));
         result.put("Json",tygodnie);
         return result;
     }
     public void updateDay(View view, int newWeekday) {
-        if (!Objects.equals(whichweekday, String.valueOf(newWeekday))) {
-            whichweekday = String.valueOf(newWeekday);
-            updateTextView(whichweekday);
-            resetButtonColors();
-            ((Button)view).setTextColor(Color.RED);
-        }
+        noButtonClicked = false;
+        previousweekday = Integer.parseInt(whichweekday);
+        whichweekday = String.valueOf(newWeekday);
+        resetButtonColors();
+        ((Button)view).setTextColor(ContextCompat.getColor(this, R.color.ThemeColor));
+    }
+    public boolean onCreateOptionsMenu(Menu menu){
+        MenuInflater inflater=getMenuInflater();
+        inflater.inflate(R.menu.menu,menu);
+        return true;
     }
     private void resetButtonColors() {
         Button monday = findViewById(R.id.monday);

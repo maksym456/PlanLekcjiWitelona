@@ -5,185 +5,173 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/backgroundgray"
     tools:context=".MainActivity">
-
-    <Button
-        android:id="@+id/downloadButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:onClick="downloadHtml"
-        android:text="@string/Pobierz_HTML"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <ListView
-        android:id="@+id/List"
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/pullToRefresh"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
-        app:layout_constraintBottom_toTopOf="@+id/downloadButton"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/wednesday" />
+        app:layout_constraintTop_toBottomOf="@+id/wednesday" >
+        <ListView
+            android:id="@+id/List"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <TextView
         android:id="@+id/textView2"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
+        android:gravity="center"
         android:text="@string/TextView"
-        app:layout_constraintBottom_toBottomOf="@+id/downloadButton"
-        app:layout_constraintEnd_toStartOf="@+id/downloadButton"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/List" />
-
-    <Button
-        android:id="@+id/buttonleft"
-        android:layout_width="0dp"
-        android:layout_height="50dp"
-        android:onClick="left"
-        android:text="Poprzedni dzień"
-        android:background="@drawable/buttonsquared"
-        app:layout_constraintEnd_toStartOf="@+id/buttonright"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <Button
-        android:id="@+id/buttonright"
-        android:layout_width="0dp"
-        android:layout_height="50dp"
-        android:onClick="right"
-        android:text="Następny dzień"
-        android:textSize="12sp"
-        android:background="@drawable/buttonsquared"
+        android:textColor="@color/buttongray"
+        android:textSize="30sp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/buttonleft"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <Button
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/wednesday" />
+    <androidx.appcompat.widget.AppCompatButton
+        android:textAllCaps="false"
         android:id="@+id/calendar"
-        android:onClick="calendar"
         android:layout_width="60dp"
-        android:layout_height="50dp"
-        android:text="Lut"
-        android:background="@drawable/buttonsquared"
+        android:layout_height="60dp"
+        android:background="@drawable/calendarbutton"
+        android:onClick="calendar"
         android:paddingStart="0dp"
         android:paddingEnd="0dp"
-        android:textSize="12sp"
+        android:text="@string/Month"
+        android:textColor="@color/ThemeColor"
+        android:textSize="16sp"
         app:layout_constraintEnd_toStartOf="@+id/monday"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/buttonleft" />
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
+    <androidx.appcompat.widget.AppCompatButton
+        android:textAllCaps="false"
         android:id="@+id/monday"
         android:layout_width="0dp"
-        android:layout_height="50dp"
-        android:text="Pon.\n12"
-        android:background="@drawable/buttonsquared"
+        android:layout_height="60dp"
+        android:background="@drawable/daysbutton"
+        android:onClick="monday"
         android:paddingStart="0dp"
         android:paddingEnd="0dp"
+        android:text="@string/Day"
+        android:textColor="@color/white"
         android:textSize="12sp"
-        android:onClick="monday"
         app:layout_constraintEnd_toStartOf="@+id/tuesday"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/calendar"
-        app:layout_constraintTop_toBottomOf="@+id/buttonleft" />
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
+    <androidx.appcompat.widget.AppCompatButton
+        android:textAllCaps="false"
         android:id="@+id/tuesday"
         android:layout_width="0dp"
-        android:layout_height="50dp"
-        android:text="Wt.\n13"
-        android:background="@drawable/buttonsquared"
+        android:layout_height="60dp"
+        android:background="@drawable/daysbutton"
+        android:onClick="tuesday"
         android:paddingStart="0dp"
         android:paddingEnd="0dp"
+        android:text="@string/Day"
+        android:textColor="@color/white"
         android:textSize="12sp"
-        android:onClick="tuesday"
         app:layout_constraintEnd_toStartOf="@+id/wednesday"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/monday"
-        app:layout_constraintTop_toBottomOf="@+id/buttonleft" />
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
+    <androidx.appcompat.widget.AppCompatButton
+        android:textAllCaps="false"
         android:id="@+id/wednesday"
         android:layout_width="0dp"
-        android:layout_height="50dp"
-        android:text="Śr.\n14"
-        android:background="@drawable/buttonsquared"
+        android:layout_height="60dp"
+        android:background="@drawable/daysbutton"
+        android:onClick="wednesday"
         android:paddingStart="0dp"
         android:paddingEnd="0dp"
+        android:text="@string/Day"
+        android:textColor="@color/white"
         android:textSize="12sp"
-        android:onClick="wednesday"
         app:layout_constraintEnd_toStartOf="@+id/thursday"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/tuesday"
-        app:layout_constraintTop_toBottomOf="@+id/buttonleft" />
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
+    <androidx.appcompat.widget.AppCompatButton
+        android:textAllCaps="false"
         android:id="@+id/thursday"
         android:layout_width="0dp"
-        android:layout_height="50dp"
-        android:text="Czw.\n15"
-        android:background="@drawable/buttonsquared"
+        android:layout_height="60dp"
+        android:background="@drawable/daysbutton"
+        android:onClick="thursday"
         android:paddingStart="0dp"
         android:paddingEnd="0dp"
+        android:text="@string/Day"
+        android:textColor="@color/white"
         android:textSize="12sp"
-        android:onClick="thursday"
         app:layout_constraintEnd_toStartOf="@+id/friday"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/wednesday"
-        app:layout_constraintTop_toBottomOf="@+id/buttonleft" />
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
+    <androidx.appcompat.widget.AppCompatButton
+        android:textAllCaps="false"
         android:id="@+id/friday"
         android:layout_width="0dp"
-        android:layout_height="50dp"
-        android:text="Pt.\n16"
-        android:background="@drawable/buttonsquared"
+        android:layout_height="60dp"
+        android:background="@drawable/daysbutton"
+        android:onClick="friday"
         android:paddingStart="0dp"
         android:paddingEnd="0dp"
+        android:text="@string/Day"
+        android:textColor="@color/white"
         android:textSize="12sp"
-        android:onClick="friday"
         app:layout_constraintEnd_toStartOf="@+id/saturday"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/thursday"
-        app:layout_constraintTop_toBottomOf="@+id/buttonleft" />
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
+    <androidx.appcompat.widget.AppCompatButton
+        android:textAllCaps="false"
         android:id="@+id/saturday"
         android:layout_width="0dp"
-        android:layout_height="50dp"
-        android:background="@drawable/buttonsquared"
+        android:layout_height="60dp"
+        android:background="@drawable/daysbutton"
+        android:onClick="saturday"
         android:paddingStart="0dp"
         android:paddingEnd="0dp"
-        android:text="Sob.\n17"
+        android:text="@string/Day"
+        android:textColor="@color/white"
         android:textSize="12sp"
-        android:onClick="saturday"
         app:layout_constraintEnd_toStartOf="@id/sunday"
         app:layout_constraintStart_toEndOf="@+id/friday"
-        app:layout_constraintTop_toBottomOf="@+id/buttonleft" />
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
+    <androidx.appcompat.widget.AppCompatButton
+        android:textAllCaps="false"
         android:id="@+id/sunday"
         android:layout_width="0dp"
-        android:layout_height="50dp"
-        android:background="@drawable/buttonsquared"
+        android:layout_height="60dp"
+        android:background="@drawable/daysbutton"
+        android:onClick="sunday"
         android:paddingStart="0dp"
         android:paddingEnd="0dp"
-        android:text="Niedz.\n18"
+        android:text="@string/Day"
+        android:textColor="@color/white"
         android:textSize="12sp"
-        android:onClick="sunday"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0"
         app:layout_constraintStart_toEndOf="@+id/saturday"
-        app:layout_constraintTop_toBottomOf="@+id/buttonleft" />
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

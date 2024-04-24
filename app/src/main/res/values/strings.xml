@@ -1,7 +1,15 @@
 <resources>
     <string name="app_name">PlanLekcjiWitelona</string>
     <string name="TextView">TextView</string>
-    <string name="Pobierz_HTML">"Pobierz HTML"</string>
+    <string name="Pobierz_HTML">Odśwież plan lekcji</string>
     <string name="button">Button</string>
     <string name="Number">1.</string>
+    <string name="Month">mies</string>
+    <string name="grupa_1_1">Grupa 1(1)</string>
+    <string name="grupa_1_2">Grupa 1(2)</string>
+    <string name="grupa_2_1_u">Grupa 2(1)u</string>
+    <string name="grupa_2_2_u">Grupa 2(2)u</string>
+    <string name="grupa_3_1_u">Grupa 3(1)u</string>
+    <string name="grupa_3_2_u">Grupa 3(2)u</string>
+    <string name="Day">Pon.\n12</string>
 </resources>
