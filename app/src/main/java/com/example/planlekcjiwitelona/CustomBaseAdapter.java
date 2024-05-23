@@ -11,7 +11,6 @@ import android.widget.TextView;
 import java.util.List;
 
 public class CustomBaseAdapter extends BaseAdapter {
-
     Context context;
     String[] listlesson;
     String[] listhour;
@@ -19,7 +18,8 @@ public class CustomBaseAdapter extends BaseAdapter {
     String[] listroom;
     String[] listnumber;
     LayoutInflater inflater;
-    public CustomBaseAdapter (Context ctx, List<String> listLesson, List<String> listHour, List<String> listTeacher, List<String> listRoom, List<String> listNumber){
+
+    public CustomBaseAdapter(Context ctx, List<String> listLesson, List<String> listHour, List<String> listTeacher, List<String> listRoom, List<String> listNumber) {
         this.context = ctx;
         this.listlesson = listLesson.toArray(new String[0]);
         this.listhour = listHour.toArray(new String[0]);
@@ -28,6 +28,7 @@ public class CustomBaseAdapter extends BaseAdapter {
         this.listnumber = listNumber.toArray(new String[0]);
         inflater = LayoutInflater.from(ctx);
     }
+
     @Override
     public int getCount() {
         return listlesson.length;
@@ -46,7 +47,7 @@ public class CustomBaseAdapter extends BaseAdapter {
     @SuppressLint({"ViewHolder", "InflateParams"})
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        convertView = inflater.inflate(R.layout.activity_list,null);
+        convertView = inflater.inflate(R.layout.activity_list, null);
         TextView lessonView = convertView.findViewById(R.id.Lesson);
         lessonView.setText(listlesson[position]);
         TextView hourView = convertView.findViewById(R.id.Hour);
